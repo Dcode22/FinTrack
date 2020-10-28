@@ -65,5 +65,20 @@ class AddMerchantForm(forms.ModelForm):
 class AddOutgoingPaymentForm(forms.ModelForm):
     class Meta: 
         model = OutgoingPayment
-        fields = ('description', 'amount', 'date_time', 'spending_category', 'bank_account', 'credit_card', 'merchant')
+        fields = ('description', 'amount', 'date_time', 'spend_category', 'bank_account', 'credit_card', 'merchant')
 
+class AddNewBankBalanceForm(forms.ModelForm):
+    class Meta:
+        model = IncomingPayment
+        fields = ('amount',)
+        labels = {
+            'amount':'Current Balance',
+        }
+
+class AddNewCreditBalanceForm(forms.ModelForm):
+    class Meta:
+        model = OutgoingPayment
+        fields = ('amount',)
+        labels = {
+            'amount':'Current Balance Due',
+        }

@@ -11,5 +11,6 @@ urlpatterns = [
     path('addbank/', views.addBankAccount, name='add_bank_account'),
     path('addmerchant/', views.addMerchant, name='add_merchant'),
     path('addcreditcard/', views.addCreditCard, name='add_credit_card'),
-    path('addincomecat/', views.addIncomeCategory, name='add_income_category')
+    path('addincomecat/', views.addIncomeCategory, name='add_income_category'),
+     path('addincomesrc/', views.addIncomeSource, name='add_income_source'),
 ]

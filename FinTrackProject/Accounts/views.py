@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, update_session_auth_hash
+from datetime import datetime
 from .forms import *
 from .models import Profile
 from Main.models import *
@@ -41,70 +42,70 @@ def profile(request):
         form2 = EditUserForm(instance=request.user)
 
 
-    total_dollars = 0
-    total_shekels = 0
-    for account in request.user.profile.bank_accounts.all():
-        if account.balance_currency != 'USD':
-            converted = convert_money(account.balance, 'USD')
-            total_dollars += converted
+    # total_dollars = 0
+    # total_shekels = 0
+    # for account in request.user.profile.bank_accounts.all():
+    #     if account.balance_currency != 'USD':
+    #         converted = convert_money(account.balance, 'USD')
+    #         total_dollars += converted
         
-        else:
-            total_dollars += account.balance
+    #     else:
+    #         total_dollars += account.balance
     
-    for account in request.user.profile.bank_accounts.all():
-        if account.balance_currency != 'ILS':
-            converted = convert_money(account.balance, 'ILS')
-            total_shekels += converted
+    # for account in request.user.profile.bank_accounts.all():
+    #     if account.balance_currency != 'ILS':
+    #         converted = convert_money(account.balance, 'ILS')
+    #         total_shekels += converted
         
-        else:
-            total_shekels += account.balance
+    #     else:
+    #         total_shekels += account.balance
 
-    total_due_dollars = 0
-    total_due_shekels = 0
-    for card in request.user.profile.credit_cards.all():
-        if card.balance_due_currency != 'USD':
-            converted = convert_money(card.balance_due, 'USD')
-            total_due_dollars += converted
+    # total_due_dollars = 0
+    # total_due_shekels = 0
+    # for card in request.user.profile.credit_cards.all():
+    #     if card.balance_due_currency != 'USD':
+    #         converted = convert_money(card.balance_due, 'USD')
+    #         total_due_dollars += converted
         
-        else:
-            total_due_dollars += card.balance_due
+    #     else:
+    #         total_due_dollars += card.balance_due
     
-    for card in request.user.profile.credit_cards.all():
-        if card.balance_due_currency != 'ILS':
-            converted = convert_money(card.balance_due, 'ILS')
-            total_due_shekels += converted
+    # for card in request.user.profile.credit_cards.all():
+    #     if card.balance_due_currency != 'ILS':
+    #         converted = convert_money(card.balance_due, 'ILS')
+    #         total_due_shekels += converted
         
-        else:
-            total_due_shekels += card.balance_due
+    #     else:
+    #         total_due_shekels += card.balance_due
 
-    total_limit_dollars = 0
-    total_limit_shekels = 0
-    for card in request.user.profile.credit_cards.all():
-        if card.spending_limit_currency != 'USD':
-            converted = convert_money(card.spending_limit, 'USD')
-            total_limit_dollars += converted
+    # total_limit_dollars = 0
+    # total_limit_shekels = 0
+    # for card in request.user.profile.credit_cards.all():
+    #     if card.spending_limit_currency != 'USD':
+    #         converted = convert_money(card.spending_limit, 'USD')
+    #         total_limit_dollars += converted
         
-        else:
-            total_limit_dollars += card.spending_limit
+    #     else:
+    #         total_limit_dollars += card.spending_limit
     
-    for card in request.user.profile.credit_cards.all():
-        if card.spending_limit_currency != 'ILS':
-            converted = convert_money(card.spending_limit, 'ILS')
-            total_limit_shekels += converted
+    # for card in request.user.profile.credit_cards.all():
+    #     if card.spending_limit_currency != 'ILS':
+    #         converted = convert_money(card.spending_limit, 'ILS')
+    #         total_limit_shekels += converted
         
-        else:
-            total_limit_shekels += card.spending_limit
+    #     else:
+    #         total_limit_shekels += card.spending_limit
 
           
     content = {
         'form1': form1, 
         'form2': form2, 
-        'total_dollars': total_dollars,
-        'total_shekels': total_shekels,
-        'total_due_dollars': total_due_dollars,
-        'total_due_shekels': total_due_shekels,
-        'total_limit_dollars': total_limit_dollars,
-        'total_limit_shekels': total_limit_shekels
+        # 'total_dollars': total_dollars,
+        # 'total_shekels': total_shekels,
+        # 'total_due_dollars': total_due_dollars,
+        # 'total_due_shekels': total_due_shekels,
+        # 'total_limit_dollars': total_limit_dollars,
+        # 'total_limit_shekels': total_limit_shekels
         }
     return render(request, 'profile.html', content)
 
@@ -117,32 +118,55 @@ def profile(request):
 
 def addBankAccount(request):
     if request.method == 'POST':
-        form = AddBankAccountForm(request.POST)
-        if form.is_valid():
-            new_bank = form.save(commit=False)
+        form1 = AddBankAccountForm(request.POST)
+        form2 = AddNewBankBalanceForm(request.POST)
+        if form1.is_valid():
+            new_bank = form1.save(commit=False)
             new_bank.profile = request.user.profile
             new_bank.save()
             messages.success(request, "Bank Account Added")
+
+        if form2.is_valid():
+            new_inc_payment = form2.save(commit=False)
+            new_inc_payment.profile = request.user.profile
+            new_inc_payment.description = "starting bank account balance"
+            new_inc_payment.date_time = datetime.now() 
+            new_inc_payment.income_source = IncomeSource.objects.get(name='Starting Balance')
+            new_inc_payment.bank_account = new_bank
+            new_inc_payment.save()
+            
             return redirect('profile')
 
     else:
-        form = AddBankAccountForm()
-        return render(request, 'add_form.html', {'form': form, 'title':'Bank Account'})
+        form1 = AddBankAccountForm()
+        form2 = AddNewBankBalanceForm()
+        return render(request, 'add_2_forms.html', {'form1': form1, 'form2': form2, 'title':'Bank Account'})
 
 def addCreditCard(request):
-    form = AddCreditCardForm()
+    form1 = AddCreditCardForm()
+    form2 = AddNewCreditBalanceForm()
     if request.method == 'POST':
-        form = AddCreditCardForm(request.POST)
-        if form.is_valid():
-            new_card = form.save(commit=False)
+        form1 = AddCreditCardForm(request.POST)
+        form2 = AddNewCreditBalanceForm(request.POST)
+        if form1.is_valid():
+            new_card = form1.save(commit=False)
             new_card.profile = request.user.profile
             new_card.save()
             messages.success(request, "Credit Card Added")
+
+        if form2.is_valid():
+            new_out_payment = form2.save(commit=False)
+            new_out_payment.profile = request.user.profile
+            new_out_payment.description = "starting credit card balance due"
+            new_out_payment.date_time = datetime.now() 
+            new_out_payment.credit_card = new_card
+            new_out_payment.save()    
+            
             return redirect('profile')
 
     else:
         
-        return render(request, 'add_form.html', {'form': form, 'title': 'Credit Card'})
+        return render(request, 'add_2_forms.html', {'form1': form1, 'form2': form2, 'title':'Credit Card'})
 
 
 def addIncomeCategory(request):
@@ -160,6 +184,20 @@ def addIncomeCategory(request):
         
         return render(request, 'add_form.html', {'form': form, 'title': 'Income Category'})
 
+def addIncomeSource(request):
+    form = AddIncomeSourceForm()
+    if request.method == 'POST':
+        form = AddIncomeSourceForm(request.POST)
+        if form.is_valid():
+            new_income_source = form.save(commit=False)
+            new_income_source.profile = request.user.profile
+            new_income_source.save()
+            messages.success(request, "Income Source Added")
+            return redirect('profile')
+        
+    else:
+        
+        return render(request, 'add_form.html', {'form': form, 'title': 'Income Source'})
 
 
 
@@ -181,3 +219,4 @@ def addMerchant(request):
        
     else:
         return render(request, 'add_form.html', {'form': form, 'title': 'Merchant'})
+
