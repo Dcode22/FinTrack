@@ -1,0 +1,13 @@
+body {
+    background-color: black;
+    color: white;
+}
+
+.content {
+    padding: 30px;
+}
+
+.profile_pic {
+    width: 150px;
+    height: 150px;
+}

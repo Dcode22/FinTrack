@@ -1,0 +1,159 @@
+{% extends 'partials/base.html' %}
+{% load mathfilters %}
+{% block title %}
+Profile
+{% endblock %}
+{% block content %}
+<h3>{{request.user.username}}</h3>
+<img src="{{request.user.profile.image.url}}" style="width: 150px;" class="profile_pic">
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+        My Info
+    </a>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px" data-toggle="collapse" href="#collapse2" role="button" aria-expanded="false" aria-controls="collapse2">
+        Edit Info
+    </a>
+</p>
+<div class="collapse" id="collapseExample">
+    <div class="card card-body" style="background-color: #343a40"">
+        <ul>
+            <li>Username: {{request.user.username}}</li>
+            <li>Email: {{request.user.email}}</li>
+            <li>First Name: {{request.user.first_name}} Last Name: {{request.user.last_name}}</li>
+            <li>{{request.user.profile}}</li>
+        </ul>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+        Collapse
+    </a>
+</p>
+</div>
+<div class="collapse" id="collapse2">
+    <div class="card card-body" style="background-color: #343a40">
+        <h2>Edit Profile</h2>
+        <form action="." method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{form1.as_p}}
+            {{form2.as_p}}
+            <button type="submit" class="btn-sm btn-outline" style="background-color: black; color: white; border: 1px white solid; margin-top: 10px">Update Profile</button>
+        </form>
+        
+    </div>
+    <p style="margin-bottom: 15px;">
+        <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px" data-toggle="collapse" href="#collapse2" role="button" aria-expanded="false" aria-controls="collapse2">
+            Collapse
+        </a>
+    </p>
+</div>
+
+
+
+<hr style="background-color: white;">
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse3" role="button" aria-expanded="false" aria-controls="collapse3">
+        My Bank Accounts
+    </a>
+</p>
+<div class="collapse" id="collapse3">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Bank Accounts:
+        {% for account in request.user.profile.bank_accounts.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{account.name}}</h3>
+            <p>Currency: {{account.currency.name}}</p>
+            <p>Account Balance: {{account.balance}}</p> 
+        </div>
+        {% endfor %}
+        
+        <h4> Accounts Total (dollars) = {{total_dollars}}</h4>
+        <h4> Accounts Total (shekels) = {{total_shekels}}</h4>
+        <a href="{% url 'add_bank_account' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Bank Account</a>
+    </div>
+    <p style="margin-bottom: 15px;">
+        <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse3" role="button" aria-expanded="false" aria-controls="collapse3">
+            Collapse
+        </a>
+    </p>
+</div>
+
+
+
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse4" role="button" aria-expanded="false" aria-controls="collapse4">
+        My Credit Cards 
+    </a>
+</p>
+
+<div class="collapse" id="collapse4">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Credit Cards:
+        {% if request.user.profile.credit_cards.all %}
+        {% for card in request.user.profile.credit_cards.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{card.name}}</h3>
+            <p>Balance Due: {{card.balance_due}}</p>
+            <p>Spending Limit: {{card.spending_limit}}</p>
+            <p>Monthly Due day: {{card.due_day}}</p>
+            <p>Current Revolving Utilization: {{card.balance_due|div:card.spending_limit|mul:100}}% </p>
+        </div>
+        {% endfor %}
+        <h3>Total Balance Due (dollars): {{total_due_dollars}}</h3>
+        <h3>Total Balance Due (shekels): {{total_due_shekels}}</h3>
+        <h3>Total Spending Limit (dollars): {{total_limit_dollars}}</h3>
+        <h3>Total Spending Limit (shekels): {{total_limit_shekels}}</h3>
+        <h3>Current Total Revolving Utilization: {{total_due_dollars|div:total_limit_dollars|mul:100}}%</h3>
+        {% endif %}
+        <a href="{% url 'add_credit_card' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Credit Card</a>
+    </div>
+    <p style="margin-bottom: 15px;">
+        <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse4" role="button" aria-expanded="false" aria-controls="collapse4">
+            Collapse 
+        </a>
+    </p>
+</div>
+
+
+
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
+        My Merchants
+    </a>
+</p>
+
+<div class="collapse" id="collapse5">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Merchants:
+        {% for merchant in request.user.profile.merchants.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{merchant.name}}</h3>
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_merchant' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Merchant</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
+        Collapse
+    </a>
+</p>
+</div>
+
+
+
+
+
+
+  
+<a href="{% url 'add_income_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Category</a>
+
+    
+
+</div>
+
+
+
+{% endblock %}
+
