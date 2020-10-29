@@ -29,7 +29,7 @@ class BankAccount(models.Model):
     def balance_dollars(self):
         balance_dollars = Money(0, 'USD')
         for incpayment in self.incoming_payments.all():
-            print(incpayment.amount_dollars)
+            
             balance_dollars += incpayment.amount_dollars
         for outpayment in self.outgoing_payments.all():
         
@@ -119,7 +119,7 @@ class Payment(models.Model):
     
     description =  models.CharField(max_length=200, null=True)
     amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
-    date_time = models.DateTimeField(auto_now_add=True)
+    date_time = models.DateTimeField(auto_now_add=False, default=datetime.now())
     # currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
     class Meta:
         abstract = True 
@@ -150,6 +150,13 @@ class SpendCategory(models.Model):
     # @property
     # def month_outgoing_payments(self, date=datetime.now()):
     #     return self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year)
+
+    def month_total_dollars(self, date=datetime.now()):
+        total = Money(0, 'USD')
+        for payment in self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year):
+            total += payment.amount_dollars 
+
+        return total    
 
 
 class Merchant(models.Model):

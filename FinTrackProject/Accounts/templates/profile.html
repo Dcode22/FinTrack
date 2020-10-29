@@ -4,9 +4,13 @@
 Profile
 {% endblock %}
 {% block content %}
-{% autoescape off %}
-{{plt_div}}
-{% endautoescape %}
+
+<div>
+    {% autoescape off %}
+    {{plt_div}}
+    {% endautoescape %}
+</div>
+
 <h3>{{request.user.username}}</h3>
 <img src="{{request.user.profile.image.url}}" style="width: 150px;" class="profile_pic">
 
@@ -137,10 +141,30 @@ Profile
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
         Collapse
     </a>
-</p>
+    
 </div>
 
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapseSCs" role="button" aria-expanded="false" aria-controls="collapseSCs">
+        My Spending Categories
+    </a>
+</p>
 
+<div class="collapse" id="collapseSCs">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Spending Categories:
+        {% for category in request.user.profile.spending_categories.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{category.name}}</h3>
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_spending_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Spending Category</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseSCs" role="button" aria-expanded="false" aria-controls="collapseSCs">
+        Collapse
+    </a>
+</div>
 
 <p style="margin-top: 10px;">
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse6" role="button" aria-expanded="false" aria-controls="collapse6">

@@ -98,23 +98,24 @@ def profile(request):
         
     #     else:
     #         total_limit_shekels += card.spending_limit
+    # labels = [category.name for category in request.user.profile.month_spending_by_category()]
+    # values = [category.total_spending for category in request.user.profile.month_spending_by_category()]
+    labels = []
+    values = []
+    for category in request.user.profile.spending_categories.all():
+        labels.append(category.name)
 
-    labels = [category.name for category in request.user.profile.month_spending_by_category()]
-    values = [category.total_spending for category in request.user.profile.month_spending_by_category()]
-
+    for category in request.user.profile.spending_categories.all():
+        values.append(category.month_total_dollars().amount)
+        
     # Use `hole` to create a donut-like pie chart
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])      
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.6, title="This Month's Spending")])      
     plt_div = plot(fig, output_type='div', include_plotlyjs=False)
+    
     content = {
         'form1': form1, 
         'form2': form2, 
         'plt_div': plt_div
-        # 'total_dollars': total_dollars,
-        # 'total_shekels': total_shekels,
-        # 'total_due_dollars': total_due_dollars,
-        # 'total_due_shekels': total_due_shekels,
-        # 'total_limit_dollars': total_limit_dollars,
-        # 'total_limit_shekels': total_limit_shekels
         }
     return render(request, 'profile.html', content)
 
@@ -261,6 +262,7 @@ def addIncomingPayment(request):
 
 def addOutgoingPayment(request):
     form = AddOutgoingPaymentForm()
+    form.fields['spend_category'].queryset = request.user.profile.spending_categories.all()
     form.fields['bank_account'].queryset = request.user.profile.bank_accounts.all()
     form.fields['credit_card'].queryset = request.user.profile.credit_cards.all()
     
