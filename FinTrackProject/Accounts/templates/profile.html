@@ -4,6 +4,9 @@
 Profile
 {% endblock %}
 {% block content %}
+{% autoescape off %}
+{{plt_div}}
+{% endautoescape %}
 <h3>{{request.user.username}}</h3>
 <img src="{{request.user.profile.image.url}}" style="width: 150px;" class="profile_pic">
 
@@ -63,6 +66,8 @@ Profile
         <div style="border: 1px white solid;">
             <h3>{{account.name}}</h3>
             <p>Currency: {{account.currency.name}}</p>
+            <p>balance_dollars: {{account.balance_dollars}}</p>
+            <p>balance_shekels: {{account.balance_shekels}}</p>
         </div>
         {% endfor %}
         
@@ -93,6 +98,9 @@ Profile
             <h3>{{card.name}}</h3>
             <p>Spending Limit: {{card.spending_limit}}</p>
             <p>Monthly Due day: {{card.due_day}}</p>
+            <p>Balance Due (dollars): {{card.balance_due_dollars}}</p>
+            <p>Balance Due (shekels): {{card.balance_due_shekels}}</p>
+            <p>Current Revolving Utilization: {{card.credit_utilization}}</p>
         </div>
         {% endfor %}
         
@@ -181,7 +189,7 @@ Profile
             <p>Date: {{outpayment.date_time}}</p>
             <p>Amount: {{outpayment.amount}}</p>
             <p>Paid To: {{outpayment.merchant}}</p>
-
+            
             <p>Paid With: {% if outpayment.bank_account %} {{outpayment.bank_account}} {% else %}  {{outpayment.credit_card}} {% endif %}</p>
             <p>Category: {{outpayment.spend_category}}</p>
         </div>
@@ -197,16 +205,11 @@ Profile
 
 
 
-
-
+<a href="{% url 'add_incoming_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Incoming Payment</a>
+<a href="{% url 'add_outgoing_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Outgoing Payment</a>
 
 <a href="{% url 'add_income_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Category</a>
-
-
-
 <a href="{% url 'add_income_source' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Source</a>
-
-
-
+<a href="{% url 'add_spending_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Spending Category</a>
 {% endblock %}
 

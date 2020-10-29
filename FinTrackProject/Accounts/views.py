@@ -8,6 +8,9 @@ from django.contrib import messages
 from django.contrib.auth.forms import PasswordChangeForm
 from djmoney.money import Money
 from djmoney.contrib.exchange.models import convert_money
+import plotly.graph_objects as go
+from plotly.offline import plot
+
 # Create your views here.
 
 def signup(request):
@@ -96,10 +99,16 @@ def profile(request):
     #     else:
     #         total_limit_shekels += card.spending_limit
 
-          
+    labels = [category.name for category in request.user.profile.month_spending_by_category()]
+    values = [category.total_spending for category in request.user.profile.month_spending_by_category()]
+
+    # Use `hole` to create a donut-like pie chart
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])      
+    plt_div = plot(fig, output_type='div', include_plotlyjs=False)
     content = {
         'form1': form1, 
         'form2': form2, 
+        'plt_div': plt_div
         # 'total_dollars': total_dollars,
         # 'total_shekels': total_shekels,
         # 'total_due_dollars': total_due_dollars,
@@ -132,6 +141,7 @@ def addBankAccount(request):
             new_inc_payment.description = "starting bank account balance"
             new_inc_payment.date_time = datetime.now() 
             new_inc_payment.income_source = IncomeSource.objects.get(name='Starting Balance')
+            new_inc_payment.income_category = IncomeCategory.objects.get(id=11)
             new_inc_payment.bank_account = new_bank
             new_inc_payment.save()
             
@@ -201,7 +211,19 @@ def addIncomeSource(request):
 
 
 
-
+def addSpendingCategory(request):
+    form = AddSpendCategoryForm()
+    if request.method == 'POST':
+        form = AddSpendCategoryForm(request.POST)
+        if form.is_valid():
+            new_spending_category = form.save(commit=False)
+            new_spending_category.profile = request.user.profile
+            new_spending_category.save()
+            messages.success(request, "Spending category added")
+            return redirect('profile')
+       
+    else:
+        return render(request, 'add_form.html', {'form': form, 'title': 'Spending Category'})
 
 
 
@@ -220,3 +242,36 @@ def addMerchant(request):
     else:
         return render(request, 'add_form.html', {'form': form, 'title': 'Merchant'})
 
+
+def addIncomingPayment(request):
+    form = AddIncomingPaymentForm()
+    form.fields['bank_account'].queryset = BankAccount.objects.filter(profile=request.user.profile)
+    if request.method == 'POST':
+        form = AddIncomingPaymentForm(request.POST)
+        if form.is_valid():
+            new_inc_pmnt = form.save(commit=False)
+            new_inc_pmnt.profile = request.user.profile
+            new_inc_pmnt.save()
+            messages.success(request, "Incoming Payment Added")
+            return redirect('profile')
+       
+    else:
+        return render(request, 'add_form.html', {'form': form, 'title': 'Incoming Payment'})
+
+
+def addOutgoingPayment(request):
+    form = AddOutgoingPaymentForm()
+    form.fields['bank_account'].queryset = request.user.profile.bank_accounts.all()
+    form.fields['credit_card'].queryset = request.user.profile.credit_cards.all()
+    
+    if request.method == 'POST':
+        form = AddOutgoingPaymentForm(request.POST)
+        if form.is_valid():
+            new_inc_pmnt = form.save(commit=False)
+            new_inc_pmnt.profile = request.user.profile
+            new_inc_pmnt.save()
+            messages.success(request, "Outgoing Payment Added")
+            return redirect('profile')
+       
+    else:
+        return render(request, 'add_form.html', {'form': form, 'title': 'Outgoing Payment'})

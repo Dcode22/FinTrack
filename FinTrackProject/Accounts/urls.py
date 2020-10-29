@@ -12,5 +12,9 @@ urlpatterns = [
     path('addmerchant/', views.addMerchant, name='add_merchant'),
     path('addcreditcard/', views.addCreditCard, name='add_credit_card'),
     path('addincomecat/', views.addIncomeCategory, name='add_income_category'),
-     path('addincomesrc/', views.addIncomeSource, name='add_income_source'),
+    path('addincomesrc/', views.addIncomeSource, name='add_income_source'),
+    path('addspendcat/', views.addSpendingCategory, name='add_spending_category'),
+    path('addincomingpayment/', views.addIncomingPayment, name='add_incoming_payment'),
+    path('addoutgoingpayment/', views.addOutgoingPayment, name='add_outgoing_payment')
+    
 ]

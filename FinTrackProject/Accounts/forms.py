@@ -47,7 +47,11 @@ class AddIncomeSourceForm(forms.ModelForm):
 class AddIncomingPaymentForm(forms.ModelForm):
     class Meta: 
         model = IncomingPayment
-        fields = ('description', 'amount', 'date_time', 'income_source', 'bank_account')
+        fields = ('description', 'amount', 'income_source', 'income_category', 'bank_account')
+    # def __init__(self, *args, **kwargs):
+    #     super(AddIncomingPaymentForm, self).__init__(*args, **kwargs)
+    #     if self.instance:
+    #         self.fields['bank_account'].queryset = BankAccount.objects.filter(profile=self.instance)
 
 
 class AddSpendCategoryForm(forms.ModelForm):
@@ -65,7 +69,7 @@ class AddMerchantForm(forms.ModelForm):
 class AddOutgoingPaymentForm(forms.ModelForm):
     class Meta: 
         model = OutgoingPayment
-        fields = ('description', 'amount', 'date_time', 'spend_category', 'bank_account', 'credit_card', 'merchant')
+        fields = ('description', 'amount', 'spend_category', 'merchant', 'bank_account', 'credit_card')
 
 class AddNewBankBalanceForm(forms.ModelForm):
     class Meta:
