@@ -4,8 +4,39 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from datetime import *
 from django.db.models import Sum
+from djmoney.money import Money
+from djmoney.contrib.exchange.models import convert_money
+import plotly.graph_objects as go
+from plotly.offline import plot
 
 
+
+
+def budget_spent_plot(month_total, monthly_budget):
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=['Spent'],
+        x=[month_total],
+        name='Spent so far this month',
+        orientation='h',
+        marker=dict(
+            color='rgba(246, 78, 139, 0.6)',
+            line=dict(color='rgba(246, 78, 139, 1.0)', width=3)
+        )
+    ))
+    fig.add_trace(go.Bar(
+        y=['Budget'],
+        x=[monthly_budget],
+        name='Monthly Budget',
+        orientation='h',
+        marker=dict(
+            color='rgba(58, 71, 80, 0.6)',
+            line=dict(color='rgba(58, 71, 80, 1.0)', width=3)
+        )
+    ))
+
+    fig.update_layout(barmode='stack')
+    return plot(fig, output_type='div', include_plotlyjs=False)
 
 # Create your models here.
 class Profile(models.Model):
@@ -19,10 +50,118 @@ class Profile(models.Model):
         return self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year)
          
     
-    def month_spending_by_category(self):
+    def month_spending_usd(self, date=datetime.now()):
+        month_out_payments = self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year)
+        total_month_out_usd = Money(0, 'USD')
+        for payment in month_out_payments:
+            total_month_out_usd += payment.amount_dollars
         
-        return self.spending_categories.annotate(total_spending=Sum("outgoing_payments__amount_dollars"))
+        return total_month_out_usd
     
+    def month_spending_ils(self, date=datetime.now()):
+        month_out_payments = self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year)
+        total_month_out_ils = Money(0, 'ILS')
+        for payment in month_out_payments:
+            total_month_out_ils += payment.amount_shekels
+        
+        return total_month_out_ils
+
+    def month_total_budget_usd(self):
+        budget_usd = Money(0, 'USD')
+        for category in self.spending_categories.all():
+            
+            budget_usd += category.monthly_budget_usd
+        
+        return budget_usd
+    
+    def month_total_budget_ils(self):
+        budget_ils = Money(0, 'ILS')
+        for category in self.spending_categories.all():
+            budget_ils += category.monthly_budget_ils
+        return budget_ils
+
+
+    def budget_spent_as_plot(self):
+        return budget_spent_plot(self.month_spending_usd().amount, self.month_total_budget_usd().amount)
+
+    
+    def total_bank_dollars(self):
+        total = Money(0, 'USD')
+        for account in self.bank_accounts.all():
+            if account.currency.name != 'USD':
+                converted = convert_money(account.balance, 'USD')
+                total += converted
+            
+            else:
+                total += account.balance
+        
+        return total 
+        
+
+    def total_bank_shekels(self): 
+        total = Money(0, 'ILS')
+        for account in self.bank_accounts.all():
+            if account.currency.name != 'ILS':
+                converted = convert_money(account.balance, 'ILS')
+                total += converted
+            
+            else:
+                total += account.balance
+        
+        return total
+
+    @property
+    def total_due_dollars(self):
+        total = Money(0, 'USD')
+    
+        for card in self.credit_cards.all():
+            if card.spending_limit_currency != 'USD':
+                converted = convert_money(card.balance_due, 'USD')
+                total += converted
+            
+            else:
+                total += card.balance_due
+        return total
+    
+    def total_due_shekels(self):
+        total = Money(0, 'ILS')
+        for card in self.credit_cards.all():
+            if card.spending_limit_currency != 'ILS':
+                converted = convert_money(card.balance_due, 'ILS')
+                total += converted
+            
+            else:
+                total += card.balance_due
+            
+        return total
+    
+    @property
+    def total_limit_dollars(self):
+        total = Money(0, 'USD')
+    
+        for card in self.credit_cards.all():
+            if card.spending_limit_currency != 'USD':
+                converted = convert_money(card.spending_limit, 'USD')
+                total += converted
+            
+            else:
+                total += card.spending_limit
+        return total
+    
+
+    def total_limit_shekels(self):
+        total = Money(0, 'ILS')
+        for card in self.credit_cards.all():
+            if card.spending_limit_currency != 'ILS':
+                converted = convert_money(card.spending_limit, 'ILS')
+                total += converted
+            
+            else:
+                total += card.spending_limit
+        return total
+    
+    def total_utilization(self):
+        return self.total_due_dollars/self.total_limit_dollars*100
 
 @receiver(post_save, sender=User)
 def createProfile(sender, created, instance, **kwargs):

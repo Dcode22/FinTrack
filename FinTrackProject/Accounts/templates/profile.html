@@ -1,15 +1,12 @@
 {% extends 'partials/base.html' %}
 {% load mathfilters %}
+{% load mytags %}
 {% block title %}
 Profile
 {% endblock %}
 {% block content %}
 
-<div>
-    {% autoescape off %}
-    {{plt_div}}
-    {% endautoescape %}
-</div>
+
 
 <h3>{{request.user.username}}</h3>
 <img src="{{request.user.profile.image.url}}" style="width: 150px;" class="profile_pic">
@@ -57,7 +54,19 @@ Profile
 
 
 
-<hr style="background-color: white;">
+<hr style="background-color: white; margin: 30px;">
+<div>
+    <p>This month's total spending (USD): {{request.user.profile.month_spending_usd}}</p>
+    <p>This month's total spending (ILS): {{request.user.profile.month_spending_ils}}</p>
+    <p>Total Credit Limit - USD:{{request.user.profile.total_limit_dollars}} ILS: {{request.user.profile.total_limit_shekels}}</p>
+    <p>Total Bank Account Balances - USD: {{request.user.profile.total_bank_dollars}} ILS: {{request.user.profile.total_bank_shekels}} </p>
+    <p>Total Outstanding Credit Due - USD: {{request.user.profile.total_due_dollars}} ILS: {{request.user.profile.total_due_shekels}} </p>
+    <p>Total Current Credit Utilization: {{request.user.profile.total_utilization}}%</p>
+    {% autoescape off %}
+    {{plt_div1}}
+    {{request.user.profile.budget_spent_as_plot}}
+    {% endautoescape %}
+</div>
 <p style="margin-top: 10px;">
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse3" role="button" aria-expanded="false" aria-controls="collapse3">
         My Bank Accounts
@@ -70,10 +79,19 @@ Profile
         <div style="border: 1px white solid;">
             <h3>{{account.name}}</h3>
             <p>Currency: {{account.currency.name}}</p>
-            <p>balance_dollars: {{account.balance_dollars}}</p>
-            <p>balance_shekels: {{account.balance_shekels}}</p>
+            <p>balance: {{account.balance}}</p>
+            {% if account.currency.name == 'USD' %}
+                {% convertMoney account.balance 'ILS' as balance_shekels %}
+                <p>Current value in shekels: {{balance_shekels}}</p>
+     
+            {% elif account.currency.name == 'ILS' %}
+                {% convertMoney account.balance 'USD' as balance_dollars %}
+                <p>Current value in dollars: {{balance_dollars}}</p>
+            {% endif %}
         </div>
         {% endfor %}
+        {{request.user.profile.total_bank_dollars}}
+        {{request.user.profile.total_bank_shekels}}
         
         <a href="{% url 'add_bank_account' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Bank Account</a>
     </div>
@@ -100,13 +118,25 @@ Profile
         {% for card in request.user.profile.credit_cards.all %}
         <div style="border: 1px white solid;">
             <h3>{{card.name}}</h3>
-            <p>Spending Limit: {{card.spending_limit}}</p>
+            <p>Credit Limit: {{card.spending_limit}}</p>
             <p>Monthly Due day: {{card.due_day}}</p>
-            <p>Balance Due (dollars): {{card.balance_due_dollars}}</p>
-            <p>Balance Due (shekels): {{card.balance_due_shekels}}</p>
-            <p>Current Revolving Utilization: {{card.credit_utilization}}</p>
+            <p>Balance Due: {{card.balance_due}}</p>
+            {% if card.spending_limit_currency == 'USD' %}
+                {% convertMoney card.balance_due 'ILS' as balance_due_shekels %}
+                <p>Balance Due in shekels (current rate): {{balance_due_shekels}}</p>
+     
+            {% elif card.spending_limit_currency == 'ILS' %}
+                {% convertMoney card.balance_due 'USD' as balance_due_dollars %}
+                <p>Balance Due in dollars (current rate): {{balance_due_dollars}}</p>
+            {% endif %}
+            <p>Current Revolving Utilization: {{card.credit_utilization}}%</p>
         </div>
         {% endfor %}
+        {{request.user.profile.total_due_dollars}}
+        {{request.user.profile.total_due_shekels}}
+        {{request.user.profile.total_limit_dollars}}
+        {{request.user.profile.total_limit_shekels}}
+        {{request.user.profile.total_utilization}}
         
         {% endif %}
         <a href="{% url 'add_credit_card' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Credit Card</a>
@@ -155,7 +185,10 @@ Profile
         My Spending Categories:
         {% for category in request.user.profile.spending_categories.all %}
         <div style="border: 1px white solid;">
-            <h3>{{category.name}}</h3>
+            <h3>{{category.name}} Budget: {{category.monthly_budget}}</h3>
+            {% autoescape off %}
+            {{category.create_plot}}
+            {% endautoescape %}
         </div>
         {% endfor %}
         <a href="{% url 'add_spending_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Spending Category</a>
@@ -179,7 +212,8 @@ Profile
         <div style="border: 1px white solid;">
             <h3>Desc: {{inpayment.description}}</h3>
             <p>Date: {{inpayment.date_time}}</p>
-            <p>Amount: {{inpayment.amount}}</p>
+            <p>Amount (dollars): {{inpayment.amount_dollars}}</p>
+            <p>Amount (shekels): {{inpayment.amount_shekels}}</p>
             <p>From: {{inpayment.income_source}}</p>
             <p>Category: {{inpayment.income_category}}</p>
             <p>Deposited in: {{inpayment.bank_account}}</p>
@@ -211,7 +245,8 @@ Profile
         <div style="border: 1px white solid;">
             <h3>Desc: {{outpayment.description}}</h3>
             <p>Date: {{outpayment.date_time}}</p>
-            <p>Amount: {{outpayment.amount}}</p>
+            <p>Amount (dollars): {{outpayment.amount_dollars}}</p>
+            <p>Amount (shekels): {{outpayment.amount_shekels}}</p>
             <p>Paid To: {{outpayment.merchant}}</p>
             
             <p>Paid With: {% if outpayment.bank_account %} {{outpayment.bank_account}} {% else %}  {{outpayment.credit_card}} {% endif %}</p>
@@ -234,6 +269,6 @@ Profile
 
 <a href="{% url 'add_income_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Category</a>
 <a href="{% url 'add_income_source' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Source</a>
-<a href="{% url 'add_spending_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Spending Category</a>
+<a href="{% url 'add_transfer' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Transfer</a>
 {% endblock %}
 

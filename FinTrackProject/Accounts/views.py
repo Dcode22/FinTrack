@@ -13,6 +13,7 @@ from plotly.offline import plot
 
 # Create your views here.
 
+
 def signup(request):
     form = SignUpForm()
     if request.method == 'POST':
@@ -45,77 +46,22 @@ def profile(request):
         form2 = EditUserForm(instance=request.user)
 
 
-    # total_dollars = 0
-    # total_shekels = 0
-    # for account in request.user.profile.bank_accounts.all():
-    #     if account.balance_currency != 'USD':
-    #         converted = convert_money(account.balance, 'USD')
-    #         total_dollars += converted
-        
-    #     else:
-    #         total_dollars += account.balance
-    
-    # for account in request.user.profile.bank_accounts.all():
-    #     if account.balance_currency != 'ILS':
-    #         converted = convert_money(account.balance, 'ILS')
-    #         total_shekels += converted
-        
-    #     else:
-    #         total_shekels += account.balance
-
-    # total_due_dollars = 0
-    # total_due_shekels = 0
-    # for card in request.user.profile.credit_cards.all():
-    #     if card.balance_due_currency != 'USD':
-    #         converted = convert_money(card.balance_due, 'USD')
-    #         total_due_dollars += converted
-        
-    #     else:
-    #         total_due_dollars += card.balance_due
-    
-    # for card in request.user.profile.credit_cards.all():
-    #     if card.balance_due_currency != 'ILS':
-    #         converted = convert_money(card.balance_due, 'ILS')
-    #         total_due_shekels += converted
-        
-    #     else:
-    #         total_due_shekels += card.balance_due
-
-    # total_limit_dollars = 0
-    # total_limit_shekels = 0
-    # for card in request.user.profile.credit_cards.all():
-    #     if card.spending_limit_currency != 'USD':
-    #         converted = convert_money(card.spending_limit, 'USD')
-    #         total_limit_dollars += converted
-        
-    #     else:
-    #         total_limit_dollars += card.spending_limit
-    
-    # for card in request.user.profile.credit_cards.all():
-    #     if card.spending_limit_currency != 'ILS':
-    #         converted = convert_money(card.spending_limit, 'ILS')
-    #         total_limit_shekels += converted
-        
-    #     else:
-    #         total_limit_shekels += card.spending_limit
-    # labels = [category.name for category in request.user.profile.month_spending_by_category()]
-    # values = [category.total_spending for category in request.user.profile.month_spending_by_category()]
     labels = []
     values = []
     for category in request.user.profile.spending_categories.all():
         labels.append(category.name)
-
-    for category in request.user.profile.spending_categories.all():
         values.append(category.month_total_dollars().amount)
         
     # Use `hole` to create a donut-like pie chart
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.6, title="This Month's Spending")])      
-    plt_div = plot(fig, output_type='div', include_plotlyjs=False)
+    fig1 = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.6, title="This Month's Spending (USD)")])      
+    plt_div1 = plot(fig1, output_type='div', include_plotlyjs=False)
     
+      
     content = {
         'form1': form1, 
         'form2': form2, 
-        'plt_div': plt_div
+        'plt_div1': plt_div1,
+        
         }
     return render(request, 'profile.html', content)
 
@@ -277,3 +223,20 @@ def addOutgoingPayment(request):
        
     else:
         return render(request, 'add_form.html', {'form': form, 'title': 'Outgoing Payment'})
+
+
+def addTransfer(request):
+    form = AddTransferForm()
+    form.fields['bank_account_from'].queryset = BankAccount.objects.filter(profile=request.user.profile)
+    form.fields['bank_account_to'].queryset = BankAccount.objects.filter(profile=request.user.profile)
+    if request.method == 'POST':
+        form = AddTransferForm(request.POST)
+        if form.is_valid():
+            new_transfer = form.save(commit=False)
+            new_transfer.profile = request.user.profile
+            new_transfer.save()
+            messages.success(request, "Transfer Added")
+            return redirect('profile')
+       
+    else:
+        return render(request, 'add_form.html', {'form': form, 'title': 'Transfer'})

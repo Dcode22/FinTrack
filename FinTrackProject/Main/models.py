@@ -1,10 +1,12 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from datetime import *; from dateutil.relativedelta import *
-from Accounts.models import Profile
+from Accounts.models import Profile, budget_spent_plot
 from djmoney.models.fields import MoneyField
 from djmoney.money import Money
 from djmoney.contrib.exchange.models import convert_money
+
+
 
 # Create your models here.
 class Currency(models.Model):
@@ -26,26 +28,32 @@ class BankAccount(models.Model):
         return f"{self.name}"
 
     @property
-    def balance_dollars(self):
-        balance_dollars = Money(0, 'USD')
-        for incpayment in self.incoming_payments.all():
-            
-            balance_dollars += incpayment.amount_dollars
-        for outpayment in self.outgoing_payments.all():
+    def balance(self):
+        if self.currency.name == 'USD':
+            balance = Money(0, 'USD')
+            for incpayment in self.incoming_payments.all():
+                balance += incpayment.amount_dollars
+            for outpayment in self.outgoing_payments.all():
+                balance -= outpayment.amount_dollars
+            for outgoing_transfer in self.outgoing_transfers.all():
+                balance -= outgoing_transfer.amount_dollars
+                balance -= outgoing_transfer.extra_fee_dollars
+            for incoming_transfer in self.incoming_transfers.all():
+                balance += incoming_transfer.amount_dollars
+        elif self.currency.name == 'ILS':
+            balance = Money(0, 'ILS')
+            for incpayment in self.incoming_payments.all():
+                balance += incpayment.amount_shekels
+            for outpayment in self.outgoing_payments.all():
+                balance -= outpayment.amount_shekels 
+            for outgoing_transfer in self.outgoing_transfers.all():
+                balance -= outgoing_transfer.amount_shekels
+                balance -= outgoing_transfer.extra_fee_shekels
+            for incoming_transfer in self.incoming_transfers.all():
+                balance += incoming_transfer.amount_shekels
+                    
+        return balance
         
-            balance_dollars -= outpayment.amount_dollars
-
-        return balance_dollars
-    
-    @property
-    def balance_shekels(self):
-        balance_shekels = Money(0, 'ILS')
-        for incpayment in self.incoming_payments.all():
-            balance_shekels += incpayment.amount_shekels
-        for outpayment in self.outgoing_payments.all():
-            balance_shekels -= outpayment.amount_shekels 
-
-        return balance_shekels
 
 
 class CreditCard(models.Model):
@@ -69,35 +77,28 @@ class CreditCard(models.Model):
         return results
    
     @property
-    def balance_due_dollars(self):
-        balance_due_dollars = Money(0, 'USD')
-        for outgoing_payment in self.month_charges:
-            balance_due_dollars += outgoing_payment.amount_dollars
-        return balance_due_dollars
-    
-    @property
-    def balance_due_shekels(self):
-        balance_due_shekels = Money(0,'ILS')
-        for outgoing_payment in self.month_charges:
-            balance_due_shekels += outgoing_payment.amount_shekels
-        return balance_due_shekels
-    
+    def balance_due(self):
+        if self.spending_limit_currency == 'USD':
+            balance_due = Money(0, 'USD')
+            for outgoing_payment in self.month_charges:
+                balance_due += outgoing_payment.amount_dollars
+            return balance_due
+        elif self.spending_limit_currency == 'ILS':
+            balance_due = Money(0,'ILS')
+            for outgoing_payment in self.month_charges:
+                balance_due += outgoing_payment.amount_shekels
+            return balance_due 
+        
     @property
     def credit_utilization(self):
         if self.spending_limit in [Money(0, 'USD'), Money(0, 'ILS')] :
             percentage = 0
+        else:
+            percentage = self.balance_due/self.spending_limit*100
 
-        elif self.spending_limit_currency == 'USD':
-            percentage = self.balance_due_dollars/self.spending_limit*100
-        
-        elif self.spending_limit_currency == 'ILS':
-            percentage = self.balance_due_shekels/self.spending_limit*100
-
-
-        return percentage
+        return round(percentage, 2)
             
     
-
 
 class IncomeCategory(models.Model):
     name = models.CharField(max_length=50)
@@ -119,8 +120,9 @@ class Payment(models.Model):
     
     description =  models.CharField(max_length=200, null=True)
     amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    amount_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD', blank=True, null=True)
+    amount_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS', blank=True, null=True)
     date_time = models.DateTimeField(auto_now_add=False, default=datetime.now())
-    # currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
     class Meta:
         abstract = True 
 
@@ -128,8 +130,7 @@ class Payment(models.Model):
 class IncomingPayment(Payment):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='incoming_payments')
     income_source = models.ForeignKey(IncomeSource, on_delete=models.PROTECT, related_name='incoming_payments', null=True, blank=True)
-    amount_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD', blank=True, null=True)
-    amount_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS', blank=True, null=True)
+   
     bank_account = models.ForeignKey(BankAccount, on_delete=models.PROTECT, related_name='incoming_payments')
     income_category = models.ForeignKey(IncomeCategory, on_delete=models.PROTECT, related_name='incoming_payments')
     def save(self, *args, **kwargs):
@@ -145,12 +146,11 @@ class SpendCategory(models.Model):
     name = models.CharField(max_length=50)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='spending_categories')
     monthly_budget = MoneyField(max_digits=10, decimal_places=2, null=True, blank=True, default_currency='USD')
+    monthly_budget_usd = MoneyField(max_digits=10, decimal_places=2, default_currency='USD', blank=True, null=True)
+    monthly_budget_ils = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS', blank=True, null=True)
     def __str__(self):
         return self.name
-    # @property
-    # def month_outgoing_payments(self, date=datetime.now()):
-    #     return self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year)
-
+   
     def month_total_dollars(self, date=datetime.now()):
         total = Money(0, 'USD')
         for payment in self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year):
@@ -158,6 +158,26 @@ class SpendCategory(models.Model):
 
         return total    
 
+    def month_total_shekels(self, date=datetime.now()):
+        total = Money(0, 'ILS')
+        for payment in self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year):
+            total += payment.amount_shekels 
+
+        return total    
+
+    def save(self, *args, **kwargs):
+        self.monthly_budget_usd = convert_money(self.monthly_budget, 'USD')
+        self.monthly_budget_ils = convert_money(self.monthly_budget, 'ILS')
+        super(SpendCategory,self).save(*args, **kwargs)
+
+    def create_plot(self):
+        if self.monthly_budget_currency == 'USD':
+            month_total = self.month_total_dollars().amount
+        elif self.monthly_budget_currency == 'ILS':
+            month_total = self.month_total_shekels().amount
+
+        return budget_spent_plot(month_total, self.monthly_budget.amount)
+  
 
 class Merchant(models.Model):
     name = models.CharField(max_length=100)
@@ -174,9 +194,45 @@ class OutgoingPayment(Payment):
     bank_account = models.ForeignKey(BankAccount, on_delete=models.PROTECT, null=True, blank=True, related_name='outgoing_payments')
     spend_category = models.ForeignKey(SpendCategory, on_delete=models.PROTECT, related_name='outgoing_payments', null=True, blank=True)
     merchant = models.ForeignKey(Merchant, on_delete=models.PROTECT, null=True, blank=True, related_name='outgoing_payments')
-    amount_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD', blank=True, null=True)
-    amount_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS', blank=True, null=True)
     def save(self, *args, **kwargs):
         self.amount_dollars = convert_money(self.amount, 'USD')
         self.amount_shekels = convert_money(self.amount, 'ILS')
         super(OutgoingPayment,self).save(*args, **kwargs)
+
+
+class Transfer(models.Model):
+   
+    amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    amount_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    amount_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS')
+    extra_fee = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    extra_fee_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    extra_fee_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS')
+    description = models.CharField(max_length=100)
+    def save(self, *args, **kwargs):
+        self.amount_dollars = convert_money(self.amount, 'USD')
+        self.amount_shekels = convert_money(self.amount, 'ILS')
+        self.extra_fee_dollars = convert_money(self.extra_fee, 'USD')
+        self.extra_fee_shekels = convert_money(self.extra_fee, 'ILS')
+        super(Transfer,self).save(*args, **kwargs)
+
+    class Meta:
+        abstract = True 
+
+class CreditCardPayment(Transfer):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='credit_card_payments')
+    bank_account_from = models.ForeignKey(BankAccount, on_delete=models.PROTECT, related_name='credit_card_payments')
+    credit_card_to = models.ForeignKey(CreditCard, on_delete=models.PROTECT, related_name='credit_card_payments')
+    rewards_discounts = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    rewards_discounts_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
+    rewards_discounts_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS')
+    def save(self, *args, **kwargs):
+        self.rewards_discounts_dollars = convert_money(self.rewards_discounts, 'USD')
+        self.rewards_discounts_shekels = convert_money(self.rewards_discounts, 'ILS')
+        super(CreditCardPayment,self).save(*args, **kwargs)
+
+class AccountTransfer(Transfer):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='account_transfers')
+    bank_account_from = models.ForeignKey(BankAccount, on_delete=models.PROTECT, related_name='outgoing_transfers')   
+    bank_account_to = models.ForeignKey(BankAccount, on_delete=models.PROTECT, related_name='incoming_transfers')
+    

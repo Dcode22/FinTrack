@@ -48,11 +48,7 @@ class AddIncomingPaymentForm(forms.ModelForm):
     class Meta: 
         model = IncomingPayment
         fields = ('description', 'amount', 'income_source', 'income_category', 'bank_account')
-    # def __init__(self, *args, **kwargs):
-    #     super(AddIncomingPaymentForm, self).__init__(*args, **kwargs)
-    #     if self.instance:
-    #         self.fields['bank_account'].queryset = BankAccount.objects.filter(profile=self.instance)
-
+   
 
 class AddSpendCategoryForm(forms.ModelForm):
     class Meta: 
@@ -86,3 +82,23 @@ class AddNewCreditBalanceForm(forms.ModelForm):
         labels = {
             'amount':'Current Balance Due',
         }
+    
+class AddTransferForm(forms.ModelForm):
+    class Meta:
+        model = AccountTransfer
+        fields = ('amount', 'bank_account_from', 'bank_account_to', 'extra_fee', 'description' )
+        labels = {
+            'amount':'Amount Deposited',
+            'extra_fee':'Extra Fees charged from sending account'
+        }
+    
+class AddCreditCardPaymentForm(forms.ModelForm):
+    class Meta:
+        model = CreditCardPayment
+        fields = ('amount', 'bank_account_from', 'credit_card_to', 'extra_fee', 'rewards_discounts', 'description' )
+        labels = {
+            'amount':'Amount paid from bank',
+            'extra_fee':'Extra Fees charged from sending account',
+            'rewards_discounts': 'Extra credit paid off through rewards etc.'
+        }
+    
