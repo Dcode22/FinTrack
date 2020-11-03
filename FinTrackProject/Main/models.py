@@ -40,6 +40,10 @@ class BankAccount(models.Model):
                 balance -= outgoing_transfer.extra_fee_dollars
             for incoming_transfer in self.incoming_transfers.all():
                 balance += incoming_transfer.amount_dollars
+            for credpay in self.credit_card_payments.all():
+                balance -= credpay.amount_dollars
+                balance -= credpay.extra_fee_dollars
+            
         elif self.currency.name == 'ILS':
             balance = Money(0, 'ILS')
             for incpayment in self.incoming_payments.all():
@@ -51,6 +55,9 @@ class BankAccount(models.Model):
                 balance -= outgoing_transfer.extra_fee_shekels
             for incoming_transfer in self.incoming_transfers.all():
                 balance += incoming_transfer.amount_shekels
+            for credpay in self.credit_card_payments.all():
+                balance -= credpay.amount_shekels
+                balance -= credpay.extra_fee_shekels
                     
         return balance
         
@@ -77,16 +84,29 @@ class CreditCard(models.Model):
         return results
    
     @property
-    def balance_due(self):
+    def balance_due(self, date=datetime.now().date()):
+        due_date = date
+        if date.day >= self.due_day:
+            due_date = date + relativedelta(months=+1)
+            
+        due_date = due_date.replace(day=self.due_day)
+        last_due_date = due_date + relativedelta(months=-1)
         if self.spending_limit_currency == 'USD':
             balance_due = Money(0, 'USD')
             for outgoing_payment in self.month_charges:
                 balance_due += outgoing_payment.amount_dollars
+            for creditpayment in self.credit_card_payments.filter(date_time__lt=due_date, date_time__gt=last_due_date):
+                balance_due -= creditpayment.amount_dollars
+                balance_due -= creditpayment.rewards_discounts_dollars
             return balance_due
+
         elif self.spending_limit_currency == 'ILS':
             balance_due = Money(0,'ILS')
             for outgoing_payment in self.month_charges:
                 balance_due += outgoing_payment.amount_shekels
+            for creditpayment in self.credit_card_payments.filter(date_time__lt=due_date, date_time__gt=last_due_date):
+                balance_due -= creditpayment.amount_shekels
+                balance_due -= creditpayment.rewards_discounts_shekels
             return balance_due 
         
     @property
@@ -102,7 +122,7 @@ class CreditCard(models.Model):
 
 class IncomeCategory(models.Model):
     name = models.CharField(max_length=50)
-    profiles = models.ManyToManyField(Profile, related_name='income_categories', blank=True)
+    profile = models.ForeignKey(Profile, related_name='income_categories', on_delete=models.CASCADE, blank=True, null=True)
     def __str__(self):
         return f"{self.name}"
 
@@ -110,7 +130,6 @@ class IncomeCategory(models.Model):
 class IncomeSource(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='income_sources')
     name = models.CharField(max_length=50)
-    category = models.ForeignKey(IncomeCategory, on_delete=models.SET_NULL, null=True, related_name='income_sources')
     def __str__(self):
         return f"{self.name}"
 
@@ -182,10 +201,23 @@ class SpendCategory(models.Model):
 class Merchant(models.Model):
     name = models.CharField(max_length=100)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='merchants', null=True, blank=True)
-    spend_category = models.ForeignKey(SpendCategory, on_delete=models.PROTECT, related_name='merchants', null=True, blank=True)
+    # spend_category = models.ForeignKey(SpendCategory, on_delete=models.PROTECT, related_name='merchants', null=True, blank=True)
     def __str__(self):
         return self.name
 
+    def month_total_dollars(self, date=datetime.now()):
+        total = Money(0, 'USD')
+        for payment in self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year):
+            total += payment.amount_dollars 
+
+        return total    
+
+    def month_total_shekels(self, date=datetime.now()):
+        total = Money(0, 'ILS')
+        for payment in self.outgoing_payments.filter(date_time__month=date.month, date_time__year=date.year):
+            total += payment.amount_shekels 
+
+        return total    
 
 
 class OutgoingPayment(Payment):
@@ -201,7 +233,7 @@ class OutgoingPayment(Payment):
 
 
 class Transfer(models.Model):
-   
+    date_time = models.DateTimeField(auto_now_add=False, default=datetime.now())
     amount = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
     amount_dollars = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
     amount_shekels = MoneyField(max_digits=10, decimal_places=2, default_currency='ILS')

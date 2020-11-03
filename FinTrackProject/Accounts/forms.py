@@ -3,6 +3,7 @@ from .models import Profile
 from Main.models import *
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from dal import autocomplete
 
 
 class SignUpForm(UserCreationForm):
@@ -41,14 +42,18 @@ class AddIncomeCategoryForm(forms.ModelForm):
 class AddIncomeSourceForm(forms.ModelForm):
     class Meta: 
         model = IncomeSource
-        fields = ('name', 'category')
+        fields = ('name',)
 
 
 class AddIncomingPaymentForm(forms.ModelForm):
     class Meta: 
         model = IncomingPayment
         fields = ('description', 'amount', 'income_source', 'income_category', 'bank_account')
-   
+        widgets = {
+            'income_category': autocomplete.ModelSelect2(url='inc_cat_autocomplete'),
+            'income_source': autocomplete.ModelSelect2(url='inc_src_autocomplete')
+        }
+
 
 class AddSpendCategoryForm(forms.ModelForm):
     class Meta: 
@@ -66,6 +71,13 @@ class AddOutgoingPaymentForm(forms.ModelForm):
     class Meta: 
         model = OutgoingPayment
         fields = ('description', 'amount', 'spend_category', 'merchant', 'bank_account', 'credit_card')
+        widgets = {
+            # 'spend_category': autocomplete.ModelSelect2(url='spend_cat_autocomplete'),
+            'merchant': autocomplete.ModelSelect2(url='merchant_autocomplete')
+        }
+
+
+
 
 class AddNewBankBalanceForm(forms.ModelForm):
     class Meta:

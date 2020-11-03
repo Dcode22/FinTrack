@@ -16,5 +16,11 @@ urlpatterns = [
     path('addspendcat/', views.addSpendingCategory, name='add_spending_category'),
     path('addincomingpayment/', views.addIncomingPayment, name='add_incoming_payment'),
     path('addoutgoingpayment/', views.addOutgoingPayment, name='add_outgoing_payment'),
-    path('addtrans/', views.addTransfer, name='add_transfer')
+    path('addtrans/', views.addTransfer, name='add_transfer'),
+    path('addcredpay/', views.addCreditPayment, name='add_credit_card_payment'),
+    path('merchantautocomp/', views.MerchantAutocomplete.as_view(create_field='name'), name='merchant_autocomplete'),
+    # path('spdcatautocomp/', views.SpendingCatAutocomplete.as_view(create_field='name'), name='spend_cat_autocomplete'),
+    path('inccatautocomp/', views.IncomeCatAutocomplete.as_view(create_field='name'), name='inc_cat_autocomplete'),
+    path('incsrcautocomp/', views.IncomeSrcAutocomplete.as_view(create_field='name'), name='inc_src_autocomplete')
+    
 ]

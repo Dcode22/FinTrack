@@ -46,28 +46,36 @@ def profile(request):
         form2 = EditUserForm(instance=request.user)
 
 
-    labels = []
-    values = []
+    labels1 = []
+    values1 = []
     for category in request.user.profile.spending_categories.all():
-        labels.append(category.name)
-        values.append(category.month_total_dollars().amount)
+        if category.month_total_dollars() > Money(0, 'USD'):
+            labels1.append(category.name)
+            values1.append(category.month_total_dollars().amount)
         
     # Use `hole` to create a donut-like pie chart
-    fig1 = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.6, title="This Month's Spending (USD)")])      
+    fig1 = go.Figure(data=[go.Pie(labels=labels1, values=values1, hole=.6, title="This Month's Spending (USD)")])      
     plt_div1 = plot(fig1, output_type='div', include_plotlyjs=False)
     
+    labels2 = []
+    values2 = []
+    for merchant in request.user.profile.merchants.all():
+        if merchant.month_total_dollars() > Money(0, 'USD'):
+            labels2.append(merchant.name)
+            values2.append(merchant.month_total_dollars().amount)
+        
+    # Use `hole` to create a donut-like pie chart
+    fig2 = go.Figure(data=[go.Pie(labels=labels2, values=values2, hole=.6, title="This Month's Spending (USD)")])      
+    plt_div2 = plot(fig2, output_type='div', include_plotlyjs=False)
       
     content = {
         'form1': form1, 
         'form2': form2, 
         'plt_div1': plt_div1,
+        'plt_div2': plt_div2
         
         }
     return render(request, 'profile.html', content)
-
-
-
-
 
 
 
@@ -85,10 +93,10 @@ def addBankAccount(request):
         if form2.is_valid():
             new_inc_payment = form2.save(commit=False)
             new_inc_payment.profile = request.user.profile
-            new_inc_payment.description = "starting bank account balance"
+            new_inc_payment.description = "Starting bank account balance"
             new_inc_payment.date_time = datetime.now() 
-            new_inc_payment.income_source = IncomeSource.objects.get(name='Starting Balance')
-            new_inc_payment.income_category = IncomeCategory.objects.get(id=11)
+            new_inc_payment.income_source = IncomeSource.objects.get_or_create(name='Starting Balance', profile=request.user.profile)[0]
+            new_inc_payment.income_category = IncomeCategory.objects.get_or_create(name='Miscellaneous', profile=request.user.profile)[0]
             new_inc_payment.bank_account = new_bank
             new_inc_payment.save()
             
@@ -215,14 +223,22 @@ def addOutgoingPayment(request):
     if request.method == 'POST':
         form = AddOutgoingPaymentForm(request.POST)
         if form.is_valid():
-            new_inc_pmnt = form.save(commit=False)
-            new_inc_pmnt.profile = request.user.profile
-            new_inc_pmnt.save()
+            new_out_pmnt = form.save(commit=False)
+            new_out_pmnt.profile = request.user.profile
+            new_out_pmnt.save()
             messages.success(request, "Outgoing Payment Added")
             return redirect('profile')
        
     else:
         return render(request, 'add_form.html', {'form': form, 'title': 'Outgoing Payment'})
+
+
+
+        
+
+
+
+
 
 
 def addTransfer(request):
@@ -240,3 +256,63 @@ def addTransfer(request):
        
     else:
         return render(request, 'add_form.html', {'form': form, 'title': 'Transfer'})
+
+
+def addCreditPayment(request):
+    form = AddCreditCardPaymentForm()
+    form.fields['bank_account_from'].queryset = BankAccount.objects.filter(profile=request.user.profile)
+    form.fields['credit_card_to'].queryset = CreditCard.objects.filter(profile=request.user.profile)
+    if request.method == 'POST':
+        form = AddCreditCardPaymentForm(request.POST)
+        if form.is_valid():
+            new_crd_pymnt = form.save(commit=False)
+            new_crd_pymnt .profile = request.user.profile
+            new_crd_pymnt .save()
+            messages.success(request, "Credit card payment saved")
+            return redirect('profile')
+       
+    else:
+        return render(request, 'add_form.html', {'form': form, 'title': 'Credit Card Payment'})
+
+
+class MerchantAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Merchant.objects.filter(profile=self.request.user.profile)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+    
+    def create_object(self, text):
+        return self.get_queryset().get_or_create(**{self.create_field:text, 'profile': self.request.user.profile})[0]
+
+
+# class SpendingCatAutocomplete(autocomplete.Select2QuerySetView):
+#     def get_queryset(self):
+#         qs = SpendCategory.objects.filter(profile=self.request.user.profile)
+#         if self.q:
+#             qs = qs.filter(name__icontains=self.q)
+#         return qs
+    
+#     def create_object(self, text):
+#         return self.get_queryset().get_or_create(**{self.create_field:text, 'profile': self.request.user.profile})[0]
+    
+
+class IncomeCatAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = IncomeCategory.objects.filter(profile=self.request.user.profile)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+    
+    def create_object(self, text):
+        return self.get_queryset().get_or_create(**{self.create_field:text, 'profile': self.request.user.profile})[0]
+
+class IncomeSrcAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = IncomeSource.objects.filter(profile=self.request.user.profile)
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+        return qs
+    
+    def create_object(self, text):
+        return self.get_queryset().get_or_create(**{self.create_field:text, 'profile': self.request.user.profile})[0]

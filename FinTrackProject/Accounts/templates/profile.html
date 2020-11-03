@@ -64,6 +64,7 @@ Profile
     <p>Total Current Credit Utilization: {{request.user.profile.total_utilization}}%</p>
     {% autoescape off %}
     {{plt_div1}}
+    {{plt_div2}}
     {{request.user.profile.budget_spent_as_plot}}
     {% endautoescape %}
 </div>
@@ -90,8 +91,8 @@ Profile
             {% endif %}
         </div>
         {% endfor %}
-        {{request.user.profile.total_bank_dollars}}
-        {{request.user.profile.total_bank_shekels}}
+        <p>Total value of all balances (USD): {{request.user.profile.total_bank_dollars}}</p> 
+        <p>Total value of all balances (ILS): {{request.user.profile.total_bank_shekels}}</p>
         
         <a href="{% url 'add_bank_account' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Bank Account</a>
     </div>
@@ -132,11 +133,17 @@ Profile
             <p>Current Revolving Utilization: {{card.credit_utilization}}%</p>
         </div>
         {% endfor %}
-        {{request.user.profile.total_due_dollars}}
-        {{request.user.profile.total_due_shekels}}
-        {{request.user.profile.total_limit_dollars}}
-        {{request.user.profile.total_limit_shekels}}
-        {{request.user.profile.total_utilization}}
+        <p>Total Credit Due This Month (USD): {{request.user.profile.total_due_dollars}}</p>
+        <p>Total Credit Due This Month (ILS): {{request.user.profile.total_due_shekels}}</p>
+        <p>Total Spending Limit (USD): {{request.user.profile.total_limit_dollars}}</p>
+        <p>Total Spending Limit (ILS): {{request.user.profile.total_limit_shekels}}</p>
+        <p>Total Credit Utilization: {{request.user.profile.total_utilization}}</p>
+
+        
+        
+        
+        
+        
         
         {% endif %}
         <a href="{% url 'add_credit_card' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Credit Card</a>
@@ -151,24 +158,52 @@ Profile
 
 
 
+
+
 <p style="margin-top: 10px;">
-    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
-        My Merchants
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapseIncCat" role="button" aria-expanded="false" aria-controls="collapseIncCat">
+        My Income Categories
     </a>
 </p>
 
-<div class="collapse" id="collapse5">
+<div class="collapse" id="collapseIncCat">
     <div class="card card-body" style="background-color: #343a40;">
-        My Merchants:
-        {% for merchant in request.user.profile.merchants.all %}
+        My Income Categories:
+        {% for category in request.user.profile.income_categories.all %}
         <div style="border: 1px white solid;">
-            <h3>{{merchant.name}}</h3>
+            <h3>{{category.name}}</h3>
         </div>
         {% endfor %}
-        <a href="{% url 'add_merchant' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Merchant</a>
+        <a href="{% url 'add_income_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Category</a>
     </div>
     <p style="margin-bottom: 15px;"></p>
-    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseIncCat" role="button" aria-expanded="false" aria-controls="collapseIncCat">
+        Collapse
+    </a>
+    
+</div>
+
+
+
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapseIncSrc" role="button" aria-expanded="false" aria-controls="collapseIncSrc">
+        My Income Sources
+    </a>
+</p>
+
+<div class="collapse" id="collapseIncSrc">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Income Sources:
+        {% for source in request.user.profile.income_sources.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{source.name}}</h3>
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_income_source' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Source</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseIncSrc" role="button" aria-expanded="false" aria-controls="collapseIncSrc">
         Collapse
     </a>
     
@@ -199,6 +234,32 @@ Profile
     </a>
 </div>
 
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
+        My Merchants
+    </a>
+</p>
+
+<div class="collapse" id="collapse5">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Merchants:
+        {% for merchant in request.user.profile.merchants.all %}
+        <div style="border: 1px white solid;">
+            <h3>{{merchant.name}}</h3>
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_merchant' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Merchant</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse5" role="button" aria-expanded="false" aria-controls="collapse5">
+        Collapse
+    </a>
+    
+</div>
+
+
+
 <p style="margin-top: 10px;">
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapse6" role="button" aria-expanded="false" aria-controls="collapse6">
         My Incoming Payments
@@ -220,7 +281,7 @@ Profile
             
         </div>
         {% endfor %}
-        
+        <a href="{% url 'add_incoming_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Incoming Payment</a>
     </div>
     <p style="margin-bottom: 15px;"></p>
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse6" role="button" aria-expanded="false" aria-controls="collapse6">
@@ -253,7 +314,7 @@ Profile
             <p>Category: {{outpayment.spend_category}}</p>
         </div>
         {% endfor %}
-        
+        <a href="{% url 'add_outgoing_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Outgoing Payment</a>
     </div>
     <p style="margin-bottom: 15px;"></p>
     <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapse7" role="button" aria-expanded="false" aria-controls="collapse7">
@@ -263,12 +324,71 @@ Profile
 </div>
 
 
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapseCCP" role="button" aria-expanded="false" aria-controls="collapseCCP">
+        My Credit Card Payments
+    </a>
+</p>
 
-<a href="{% url 'add_incoming_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Incoming Payment</a>
-<a href="{% url 'add_outgoing_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Outgoing Payment</a>
+<div class="collapse" id="collapseCCP">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Credit Card Payments:
+        {% for payment in request.user.profile.credit_card_payments.all %}
+        <div style="border: 1px white solid;">
+            <h3>Desc: {{payment.description}}</h3>
+            <p>Date: {{payment.date_time}}</p>
+            <p>Amount (dollars): {{payment.amount_dollars}}</p>
+            <p>Amount (shekels): {{payment.amount_shekels}}</p>
+            <p>Extra fees - USD: {{payment.extra_fee_dollars}}  ILS: {{payment.extra_fee_shekels}}</p>
+            <p>Rewards discounts applied - USD: {{payment.rewards_discounts_dollars}} ILS: {{payment.rewards_discounts_shekels}}</p>
+            <p>Withdrawn from: {{payment.bank_account_from}}</p>
+            <p>Deposited to: {{payment.credit_card_to}}</p>
+           
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_credit_card_payment' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Credit Card Payment</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseCCP" role="button" aria-expanded="false" aria-controls="collapseCCP">
+        Collapse
+    </a>
+</p>
+</div>
 
-<a href="{% url 'add_income_category' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Category</a>
-<a href="{% url 'add_income_source' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Income Source</a>
-<a href="{% url 'add_transfer' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Transfer</a>
+
+
+<p style="margin-top: 10px;">
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px;" data-toggle="collapse" href="#collapseTrans" role="button" aria-expanded="false" aria-controls="collapseTrans">
+        My Transfers
+    </a>
+</p>
+
+<div class="collapse" id="collapseTrans">
+    <div class="card card-body" style="background-color: #343a40;">
+        My Transfers:
+        {% for acctransfer in request.user.profile.account_transfers.all %}
+        <div style="border: 1px white solid;">
+            <h3>Desc: {{acctransfer.description}}</h3>
+            <p>Date: {{acctransfer.date_time}}</p>
+            <p>Amount (dollars): {{acctransfer.amount_dollars}}</p>
+            <p>Amount (shekels): {{acctransfer.amount_shekels}}</p>
+            <p>Extra fees - USD: {{acctransfer.extra_fee_dollars}}  ILS: {{acctransfer.extra_fee_shekels}}</p>
+            <p>Withdrawn from: {{acctransfer.bank_account_from}}</p>
+            <p>Deposited to: {{acctransfer.bank_account_to}}</p>
+           
+        </div>
+        {% endfor %}
+        <a href="{% url 'add_transfer' %}" class="btn-sm btn-outline" style="color: white; border: 1px solid white; margin: 5px; width: fit-content;">Add Transfer</a>
+    </div>
+    <p style="margin-bottom: 15px;"></p>
+    <a class="btn-sm btn-outline" style="color: white; border: 1px white solid; margin: 5px; " data-toggle="collapse" href="#collapseTrans" role="button" aria-expanded="false" aria-controls="collapseTrans">
+        Collapse
+    </a>
+</p>
+</div>
+
+
+
+
 {% endblock %}
 

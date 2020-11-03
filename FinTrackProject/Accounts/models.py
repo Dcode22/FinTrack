@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from datetime import *
@@ -161,9 +161,16 @@ class Profile(models.Model):
         return total
     
     def total_utilization(self):
-        return self.total_due_dollars/self.total_limit_dollars*100
-
+        if self.total_limit_dollars > Money(0, 'USD'):
+            return round(self.total_due_dollars/self.total_limit_dollars*100, 2)
+        else:
+            pass 
 @receiver(post_save, sender=User)
 def createProfile(sender, created, instance, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+
+    permission1 = Permission.objects.get(codename='add_merchant')
+    permission2 = Permission.objects.get(codename='add_incomecategory')
+    permission3 = Permission.objects.get(codename='add_incomesource')
+    instance.user_permissions.add(permission1, permission2, permission3)
