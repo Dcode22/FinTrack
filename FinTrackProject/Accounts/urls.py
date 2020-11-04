@@ -21,6 +21,6 @@ urlpatterns = [
     path('merchantautocomp/', views.MerchantAutocomplete.as_view(create_field='name'), name='merchant_autocomplete'),
     # path('spdcatautocomp/', views.SpendingCatAutocomplete.as_view(create_field='name'), name='spend_cat_autocomplete'),
     path('inccatautocomp/', views.IncomeCatAutocomplete.as_view(create_field='name'), name='inc_cat_autocomplete'),
-    path('incsrcautocomp/', views.IncomeSrcAutocomplete.as_view(create_field='name'), name='inc_src_autocomplete')
-    
+    path('incsrcautocomp/', views.IncomeSrcAutocomplete.as_view(create_field='name'), name='inc_src_autocomplete'),
+    path('dash/', views.dashboard, name='dashboard'),
 ]

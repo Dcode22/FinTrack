@@ -45,7 +45,7 @@ def profile(request):
         form1 = EditProfileForm(instance=request.user.profile)
         form2 = EditUserForm(instance=request.user)
 
-
+   
     labels1 = []
     values1 = []
     for category in request.user.profile.spending_categories.all():
@@ -54,7 +54,17 @@ def profile(request):
             values1.append(category.month_total_dollars().amount)
         
     # Use `hole` to create a donut-like pie chart
-    fig1 = go.Figure(data=[go.Pie(labels=labels1, values=values1, hole=.6, title="This Month's Spending (USD)")])      
+    fig1 = go.Figure(data=[go.Pie(labels=labels1, values=values1, hole=.6, title="This Month's Spending (USD)")],)      
+    fig1.update_layout(
+        barmode='stack',
+        margin=go.layout.Margin(
+                l=60, #left margin
+                r=20, #right margin
+                b=20, #bottom margin
+                t=20  #top margin
+            )
+        )
+    
     plt_div1 = plot(fig1, output_type='div', include_plotlyjs=False)
     
     labels2 = []
@@ -106,6 +116,15 @@ def addBankAccount(request):
         form1 = AddBankAccountForm()
         form2 = AddNewBankBalanceForm()
         return render(request, 'add_2_forms.html', {'form1': form1, 'form2': form2, 'title':'Bank Account'})
+
+
+
+def EditBank(request):
+    form = AddBankAccountForm(data=request.POST, instance=request.user)
+    if request.method =='POST':
+        form = AddBankAccountForm()
+
+
 
 def addCreditCard(request):
     form1 = AddCreditCardForm()
@@ -316,3 +335,12 @@ class IncomeSrcAutocomplete(autocomplete.Select2QuerySetView):
     
     def create_object(self, text):
         return self.get_queryset().get_or_create(**{self.create_field:text, 'profile': self.request.user.profile})[0]
+
+    
+def dashboard(request):
+    
+
+
+
+    return render(request, 'dashboard.html')
+    

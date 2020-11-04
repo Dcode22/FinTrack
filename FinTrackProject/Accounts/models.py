@@ -20,8 +20,8 @@ def budget_spent_plot(month_total, monthly_budget):
         name='Spent so far this month',
         orientation='h',
         marker=dict(
-            color='rgba(246, 78, 139, 0.6)',
-            line=dict(color='rgba(246, 78, 139, 1.0)', width=3)
+            color='rgba(157, 211, 49, 0.5)',
+            line=dict(color='rgba(157, 211, 49, 1.0)', width=3)
         )
     ))
     fig.add_trace(go.Bar(
@@ -35,7 +35,27 @@ def budget_spent_plot(month_total, monthly_budget):
         )
     ))
 
-    fig.update_layout(barmode='stack')
+        
+    
+    fig.update_layout(
+        autosize=False,
+        height=100,
+        barmode='stack',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+
+        font={
+            'color':'rgb(157, 211, 49)'
+        },
+        margin=go.layout.Margin(
+                l=60, #left margin
+                r=20, #right margin
+                b=20, #bottom margin
+                t=20  #top margin
+            )
+        )
+
+
     return plot(fig, output_type='div', include_plotlyjs=False)
 
 # Create your models here.
@@ -165,6 +185,67 @@ class Profile(models.Model):
             return round(self.total_due_dollars/self.total_limit_dollars*100, 2)
         else:
             pass 
+
+    def spend_cat_pie(self):
+        labels1 = []
+        values1 = []
+        for category in self.spending_categories.all():
+            if category.month_total_dollars() > Money(0, 'USD'):
+                labels1.append(category.name)
+                values1.append(category.month_total_dollars().amount)
+            
+        # Use `hole` to create a donut-like pie chart
+        fig1 = go.Figure(data=[go.Pie(labels=labels1, values=values1, hole=.6, title="Month's Spending by Category(USD)")],)      
+        fig1.update_layout(
+          
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=go.layout.Margin(
+                    l=0, #left margin
+                    r=0, #right margin
+                    b=50, #bottom margin
+                    t=0  #top margin
+                ),
+
+            font={
+            'color':'rgb(157, 211, 49)'
+            },
+            )
+        
+        return plot(fig1, output_type='div', include_plotlyjs=False)
+    
+    
+    def spend_merchant_pie(self):
+
+        labels2 = []
+        values2 = []
+        for merchant in self.merchants.all():
+            if merchant.month_total_dollars() > Money(0, 'USD'):
+                labels2.append(merchant.name)
+                values2.append(merchant.month_total_dollars().amount)
+            
+        # Use `hole` to create a donut-like pie chart
+        fig2 = go.Figure(data=[go.Pie(labels=labels2, values=values2, hole=.6, title="Month's Spending by Merchant (USD)")])      
+        fig2.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=go.layout.Margin(
+                    l=0, #left margin
+                    r=0, #right margin
+                    b=0, #bottom margin
+                    t=0  #top margin
+                ),
+
+            font={
+            'color':'rgb(157, 211, 49)'
+            },
+            )
+        
+        return plot(fig2, output_type='div', include_plotlyjs=False)
+
+
+
+    
 @receiver(post_save, sender=User)
 def createProfile(sender, created, instance, **kwargs):
     if created:

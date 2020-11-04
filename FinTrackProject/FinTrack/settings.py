@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'djmoney.contrib.exchange',
     'Accounts',
     'Main',
-    'Investments'
+    'Investments',
+    'bootstrapform'
 
 ]
 
